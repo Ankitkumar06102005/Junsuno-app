@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #F3F6F0;
+    --bg2: #EAF0E4;
+    --ink: #1C2620;
+    --ink-soft: #4B564C;
+    --green: #1F4D3A;
+    --green-deep: #153529;
+    --ochre: #B8862E;
+    --brick: #8C3B2E;
+    --card: #FDFEFC;
+    --line: #D3DBCB;
+    --font-heading: 'Source Serif 4', Georgia, serif;
+    --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .dark {
+    --bg: #141C17;
+    --bg2: #1B241D;
+    --ink: #EAF0E4;
+    --ink-soft: #AEBBAB;
+    --green: #5B9A80;
+    --green-deep: #3D735D;
+    --ochre: #D4A347;
+    --brick: #C45B4B;
+    --card: #1E271F;
+    --line: #2C392F;
+  }
+
+  /* Accessibility font sizing */
+  .large-text {
+    font-size: 1.15rem;
+  }
+  .large-text h1 { font-size: 2.25rem !important; line-height: 2.6rem !important; }
+  .large-text h2 { font-size: 1.75rem !important; line-height: 2.1rem !important; }
+  .large-text p, .large-text button, .large-text input, .large-text textarea {
+    font-size: 1.15rem !important;
+  }
+
+  /* High contrast mode */
+  .high-contrast {
+    --bg: #FFFFFF;
+    --bg2: #F0F0F0;
+    --ink: #000000;
+    --ink-soft: #111111;
+    --green: #004D25;
+    --green-deep: #002B14;
+    --ochre: #8F5B00;
+    --brick: #8B0000;
+    --card: #FFFFFF;
+    --line: #000000;
+  }
+  .dark.high-contrast {
+    --bg: #000000;
+    --bg2: #111111;
+    --ink: #FFFFFF;
+    --ink-soft: #E0E0E0;
+    --green: #00FF7F;
+    --green-deep: #00D060;
+    --ochre: #FFD700;
+    --brick: #FF4500;
+    --card: #0A0A0A;
+    --line: #FFFFFF;
+  }
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif-civic {
+  font-family: var(--font-heading);
+}
+
+.font-sans-civic {
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbar for ledger queues */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-soft);
+}
