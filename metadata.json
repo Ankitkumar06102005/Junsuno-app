@@ -1,0 +1,6 @@
+{
+  "name": "Junsono — Civic Grievance & Municipal Triaging System",
+  "description": "AI-powered civic grievance lodging and tracking system with multilingual voice triaging, automatic deduplication, severity scoring, and municipal department dashboard.",
+  "requestFramePermissions": ["geolocation", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
