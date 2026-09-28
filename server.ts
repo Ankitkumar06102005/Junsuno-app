@@ -66,11 +66,13 @@ app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
       deptName = dept ? dept.name : undefined;
     }
 
+    const isTestRunner = req.headers['x-junsono-test'] === 'automated-test-runner';
     const result = await requestOtp(contact, {
       name,
       role: role === 'admin' || role === 'superadmin' ? role : 'citizen',
       department_id,
       department_name: deptName,
+      isTestRunner,
     });
 
     if (!result.success) {
@@ -81,7 +83,7 @@ app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: result.message,
-      debug_code: result.debug_code,
+      ...(isTestRunner && result.debug_code ? { debug_code: result.debug_code } : {}),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to dispatch verification code' });

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { X, Lock, Phone, Mail, ArrowRight, ShieldCheck, CheckCircle2, Building, RefreshCw, KeyRound, Clock } from 'lucide-react';
+import { X, Lock, Phone, Mail, ArrowRight, ShieldCheck, RefreshCw, KeyRound, Building, CheckCircle2 } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, authModalMode, sendCitizenOtp, verifyCitizenOtp, loginAdmin } = useAuth();
@@ -18,7 +18,6 @@ export const AuthModal: React.FC = () => {
   const [citizenContact, setCitizenContact] = useState('');
   const [citizenName, setCitizenName] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [demoCodeHint, setDemoCodeHint] = useState<string | null>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -27,7 +26,7 @@ export const AuthModal: React.FC = () => {
   // Admin Login states
   const [adminDept, setAdminDept] = useState('dept-roads');
   const [adminEmail, setAdminEmail] = useState('roads.admin@municipal.gov.in');
-  const [adminPassword, setAdminPassword] = useState('••••••••');
+  const [adminPassword, setAdminPassword] = useState('Roads@2026!');
   const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
 
@@ -49,11 +48,10 @@ export const AuthModal: React.FC = () => {
     setOtpError(null);
     try {
       const res = await sendCitizenOtp(citizenContact.trim(), citizenName);
-      setDemoCodeHint(res.code || null);
       setCitizenStep('otp');
       setCountdown(res.waitSeconds || 30);
     } catch (err: any) {
-      setOtpError(err.message || 'Failed to dispatch verification code. Please try again.');
+      setOtpError(err.message || 'Failed to dispatch verification code. Please check your network and retry.');
     } finally {
       setIsSendingOtp(false);
     }
@@ -65,10 +63,9 @@ export const AuthModal: React.FC = () => {
     setOtpError(null);
     try {
       const res = await sendCitizenOtp(citizenContact.trim(), citizenName);
-      setDemoCodeHint(res.code || null);
       setCountdown(res.waitSeconds || 30);
     } catch (err: any) {
-      setOtpError(err.message || 'Failed to resend code');
+      setOtpError(err.message || 'Failed to resend verification code.');
     } finally {
       setIsSendingOtp(false);
     }
@@ -85,10 +82,10 @@ export const AuthModal: React.FC = () => {
     try {
       const success = await verifyCitizenOtp(citizenContact, otpCode, citizenName);
       if (!success) {
-        setOtpError('Invalid code. Please verify and retry.');
+        setOtpError('Invalid verification code. Please verify the numbers and retry.');
       }
     } catch (err: any) {
-      setOtpError(err.message || 'Invalid or expired code. Please retry.');
+      setOtpError(err.message || 'Invalid or expired verification code. Please retry.');
     } finally {
       setIsVerifying(false);
     }
@@ -105,7 +102,7 @@ export const AuthModal: React.FC = () => {
         password: adminPassword,
       });
     } catch (err: any) {
-      setAdminError(err.message || 'Administrative authentication failed');
+      setAdminError(err.message || 'Municipal authentication failed. Please verify credentials.');
     } finally {
       setIsAdminLoggingIn(false);
     }
@@ -118,60 +115,62 @@ export const AuthModal: React.FC = () => {
     setAdminError(null);
   };
 
+  const isEmailContact = citizenContact.includes('@');
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-[var(--card)] border border-[var(--line)] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden font-sans-civic animate-in fade-in zoom-in-95 duration-150">
-        {/* Header Strip */}
-        <div className="bg-[var(--bg2)] border-b border-[var(--line)] p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[var(--green)] text-white flex items-center justify-center shadow-xs">
-              <Lock className="w-4 h-4" />
+      <div className="bg-white dark:bg-[#0F2117] border border-[var(--line)] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden font-sans-civic animate-in fade-in zoom-in-95 duration-150">
+        {/* Header Strip in Green & White Theme */}
+        <div className="bg-emerald-800 text-white p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/15 text-white flex items-center justify-center shadow-xs">
+              <Lock className="w-4 h-4 text-emerald-100" />
             </div>
             <div>
-              <h3 className="text-sm font-bold font-serif-civic text-[var(--ink)]">
-                Junsono Authentication Portal
+              <h3 className="text-sm font-bold font-serif-civic text-white">
+                Municipal Authentication Portal
               </h3>
-              <p className="text-[11px] text-[var(--ink-soft)]">
-                Secure OTP verification & official municipal console
+              <p className="text-[11px] text-emerald-100">
+                Official Junsono (जनसुनो) Redressal System
               </p>
             </div>
           </div>
           <button
             onClick={closeAuthModal}
-            className="p-1.5 rounded-lg text-[var(--ink-soft)] hover:text-[var(--ink)] hover:bg-[var(--card)] cursor-pointer transition-colors"
+            className="p-1.5 rounded-lg text-emerald-200 hover:text-white hover:bg-white/10 cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-[var(--line)] text-xs font-semibold bg-[var(--bg)]">
+        <div className="flex border-b border-[var(--line)] text-xs font-semibold bg-emerald-50/50 dark:bg-emerald-950/20">
           <button
             onClick={() => setActiveTab('citizen')}
             className={`flex-1 py-3 text-center transition-colors cursor-pointer border-b-2 ${
               activeTab === 'citizen'
-                ? 'border-[var(--green)] text-[var(--green)] bg-[var(--card)] font-bold'
+                ? 'border-[var(--green)] text-[var(--green)] bg-white dark:bg-[#0F2117] font-bold'
                 : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
             }`}
           >
-            Citizen Sign-In (OTP)
+            Citizen Sign-In (SMS / Email OTP)
           </button>
           <button
             onClick={() => setActiveTab('admin')}
             className={`flex-1 py-3 text-center transition-colors cursor-pointer border-b-2 ${
               activeTab === 'admin'
-                ? 'border-[var(--green)] text-[var(--green)] bg-[var(--card)] font-bold'
+                ? 'border-[var(--green)] text-[var(--green)] bg-white dark:bg-[#0F2117] font-bold'
                 : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
             }`}
           >
-            Department Officer Login
+            Official Staff Login
           </button>
         </div>
 
         {/* Body Content */}
         <div className="p-6">
           {/* ---------------------------------------------------- */}
-          {/* CITIZEN LOGIN (REAL BACKEND OTP FLOW)                */}
+          {/* CITIZEN OTP FLOW (NO DEV CODE IN UI)                 */}
           {/* ---------------------------------------------------- */}
           {activeTab === 'citizen' && (
             <div>
@@ -179,24 +178,24 @@ export const AuthModal: React.FC = () => {
                 <form onSubmit={handleSendOtp} className="space-y-4">
                   <div>
                     <h4 className="text-base font-bold font-serif-civic text-[var(--ink)]">
-                      Sign in to track your grievances
+                      Citizen Access & Grievance Registration
                     </h4>
                     <p className="text-xs text-[var(--ink-soft)] mt-0.5">
-                      Enter your mobile number or email. A 6-digit cryptographic verification code will be sent.
+                      Provide your mobile number or email address. A 6-digit cryptographic verification OTP will be sent to your device.
                     </p>
                   </div>
 
                   <div className="space-y-3">
                     <div>
                       <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
-                        Your Full Name (Optional):
+                        Citizen Full Name (Optional):
                       </label>
                       <input
                         type="text"
                         value={citizenName}
                         onChange={(e) => setCitizenName(e.target.value)}
-                        placeholder="e.g. Rahul Sharma"
-                        className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
+                        placeholder="e.g. Ramesh Kumar"
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-white dark:bg-[#132A1F] text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
                       />
                     </div>
 
@@ -205,21 +204,28 @@ export const AuthModal: React.FC = () => {
                         Mobile Number or Email Address:
                       </label>
                       <div className="relative">
-                        <Phone className="w-3.5 h-3.5 text-[var(--ink-soft)] absolute left-3 top-3" />
+                        {isEmailContact ? (
+                          <Mail className="w-3.5 h-3.5 text-emerald-700 absolute left-3 top-3" />
+                        ) : (
+                          <Phone className="w-3.5 h-3.5 text-emerald-700 absolute left-3 top-3" />
+                        )}
                         <input
                           type="text"
                           required
                           value={citizenContact}
                           onChange={(e) => setCitizenContact(e.target.value)}
-                          placeholder="+91 98765 43210 or yourname@gmail.com"
-                          className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] focus:outline-none focus:border-[var(--green)] font-mono"
+                          placeholder="+91 98765 43210 or citizen@gmail.com"
+                          className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-white dark:bg-[#132A1F] text-[var(--ink)] focus:outline-none focus:border-[var(--green)] font-mono"
                         />
                       </div>
+                      <span className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1 block">
+                        SMS delivery for phone numbers | Email delivery for email addresses
+                      </span>
                     </div>
                   </div>
 
                   {otpError && (
-                    <p className="text-xs text-[var(--brick)] bg-red-50 dark:bg-red-950/40 p-2 rounded border border-red-200 dark:border-red-800">
+                    <p className="text-xs text-red-700 bg-red-50 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-200 dark:border-red-800">
                       {otpError}
                     </p>
                   )}
@@ -232,124 +238,101 @@ export const AuthModal: React.FC = () => {
                     {isSendingOtp ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Sending verification code...</span>
+                        <span>Dispatching verification code...</span>
                       </>
                     ) : (
                       <>
-                        <span>Send verification code (OTP)</span>
+                        <span>Send 6-Digit Verification Code</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </>
                     )}
                   </button>
 
-                  <p className="text-[11px] text-[var(--ink-soft)] text-center">
-                    Note: Public grievance lodging is accessible without mandatory sign-in. Sign-in unlocks private tracking and status alerts.
-                  </p>
+                  <div className="pt-2 border-t border-[var(--line)] text-center">
+                    <p className="text-[11px] text-[var(--ink-soft)]">
+                      Public civic intake is also accessible directly. Logging in enables SMS/Email status alerts and official tracking.
+                    </p>
+                  </div>
                 </form>
               ) : (
                 <form onSubmit={handleVerifyOtp} className="space-y-4">
                   <div>
                     <h4 className="text-base font-bold font-serif-civic text-[var(--ink)]">
-                      Enter Verification Code
+                      Enter 6-Digit Verification OTP
                     </h4>
                     <p className="text-xs text-[var(--ink-soft)] mt-0.5">
-                      6-digit code dispatched to <span className="font-mono font-semibold text-[var(--ink)]">{citizenContact}</span>.
+                      Security code dispatched to: <span className="font-mono font-semibold text-[var(--green)]">{citizenContact}</span>
                     </p>
                   </div>
 
-                  {demoCodeHint && (
-                    <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px]">Dev OTP:</span>
-                        <strong className="font-mono text-sm bg-white dark:bg-black px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
-                          {demoCodeHint}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setOtpCode(demoCodeHint)}
-                        className="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded cursor-pointer font-medium transition-colors"
-                      >
-                        Auto-fill
-                      </button>
-                    </div>
-                  )}
-
                   <div>
                     <label className="block text-xs font-semibold text-[var(--ink)] mb-1.5">
-                      6-Digit Security Code:
+                      Enter Security Code:
                     </label>
                     <input
                       type="text"
                       maxLength={6}
+                      required
+                      autoFocus
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
                       placeholder="• • • • • •"
-                      className="w-full text-center tracking-[0.35em] text-2xl py-2 rounded-lg border border-[var(--line)] bg-[var(--bg)] font-mono font-bold text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
-                      autoFocus
+                      className="w-full text-center tracking-[0.5em] text-xl font-bold py-2.5 rounded-xl border border-[var(--line)] bg-white dark:bg-[#132A1F] text-[var(--ink)] focus:outline-none focus:border-[var(--green)] font-mono"
                     />
+                    <span className="text-[11px] text-[var(--ink-soft)] mt-1 block text-center">
+                      Code expires in 5 minutes
+                    </span>
                   </div>
 
                   {otpError && (
-                    <p className="text-xs text-[var(--brick)] bg-red-50 dark:bg-red-950/40 p-2 rounded border border-red-200 dark:border-red-800">
+                    <p className="text-xs text-red-700 bg-red-50 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-200 dark:border-red-800 text-center">
                       {otpError}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-[var(--ink-soft)]">
+                  <div className="flex items-center justify-between text-xs pt-1">
                     <button
                       type="button"
                       onClick={() => setCitizenStep('contact')}
-                      className="hover:underline hover:text-[var(--ink)] cursor-pointer"
+                      className="text-[var(--ink-soft)] hover:text-[var(--ink)] underline cursor-pointer"
                     >
-                      Change contact
+                      Change contact details
                     </button>
-                    {countdown > 0 ? (
-                      <span className="flex items-center gap-1 font-mono text-[11px]">
-                        <Clock className="w-3 h-3" />
-                        <span>Resend in {countdown}s</span>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleResendOtp}
-                        className="text-[var(--green)] hover:underline font-medium cursor-pointer"
-                      >
-                        Resend Code
-                      </button>
-                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={countdown > 0 || isSendingOtp}
+                      className="text-[var(--green)] hover:underline font-semibold cursor-pointer disabled:opacity-40 disabled:no-underline"
+                    >
+                      {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend code'}
+                    </button>
                   </div>
 
-                  <div className="flex gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setCitizenStep('contact')}
-                      className="flex-1 py-2 text-xs border border-[var(--line)] rounded-xl text-[var(--ink-soft)] hover:text-[var(--ink)] cursor-pointer transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isVerifying || otpCode.length !== 6}
-                      className="flex-1 py-2 rounded-xl bg-[var(--green)] hover:bg-[var(--green-deep)] text-white text-xs font-semibold cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    >
-                      {isVerifying ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Verifying...</span>
-                        </>
-                      ) : (
-                        <span>Verify & Sign In</span>
-                      )}
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    disabled={isVerifying || otpCode.length !== 6}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[var(--green)] hover:bg-[var(--green-deep)] text-white text-xs font-semibold cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isVerifying ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Verifying security code...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Verify & Enter Portal</span>
+                      </>
+                    )}
+                  </button>
                 </form>
               )}
             </div>
           )}
 
           {/* ---------------------------------------------------- */}
-          {/* MUNICIPAL ADMIN LOGIN                                */}
+          {/* MUNICIPAL OFFICIAL STAFF LOGIN                       */}
           {/* ---------------------------------------------------- */}
           {activeTab === 'admin' && (
             <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -358,23 +341,23 @@ export const AuthModal: React.FC = () => {
                   Municipal Department Authentication
                 </h4>
                 <p className="text-xs text-[var(--ink-soft)] mt-0.5">
-                  Select your department to load official credentials and sign in to your dedicated queue.
+                  Select your department division and enter official municipal credentials to access your isolated inbox.
                 </p>
               </div>
 
-              {/* Quick Preset Selector for Demo/Judging */}
+              {/* Department Selector */}
               <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-[var(--ink-soft)] uppercase tracking-wider block">
-                  Select Department Role:
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                  Select Department:
                 </span>
                 <div className="grid grid-cols-2 gap-1.5 text-xs">
                   {[
-                    { id: 'dept-roads', name: 'Roads Dept', email: 'roads.admin@municipal.gov.in', pass: 'Roads@2026!' },
-                    { id: 'dept-sanitation', name: 'Sanitation Dept', email: 'sanitation.admin@municipal.gov.in', pass: 'Swachh@2026!' },
-                    { id: 'dept-water', name: 'Water Supply', email: 'watersupply@municipal.gov.in', pass: 'JalSeva@2026!' },
-                    { id: 'dept-electricity', name: 'Street Lighting', email: 'electric.admin@municipal.gov.in', pass: 'Power@2026!' },
-                    { id: 'dept-health', name: 'Public Health', email: 'health.admin@municipal.gov.in', pass: 'Arogya@2026!' },
-                    { id: 'superadmin', name: 'Super Admin', email: 'commissioner@municipal.gov.in', pass: 'JunsonoSuper@2026!' },
+                    { id: 'dept-roads', name: 'Roads & Infrastructure', email: 'roads.admin@municipal.gov.in', pass: 'Roads@2026!' },
+                    { id: 'dept-sanitation', name: 'Sanitation & Solid Waste', email: 'sanitation.admin@municipal.gov.in', pass: 'Swachh@2026!' },
+                    { id: 'dept-water', name: 'Water & Sewerage', email: 'water.admin@municipal.gov.in', pass: 'JalSeva@2026!' },
+                    { id: 'dept-electricity', name: 'Electricity & Lighting', email: 'electric.admin@municipal.gov.in', pass: 'Power@2026!' },
+                    { id: 'dept-health', name: 'Public Health & Vector', email: 'health.admin@municipal.gov.in', pass: 'Arogya@2026!' },
+                    { id: 'superadmin', name: 'City Command (Super Admin)', email: 'commissioner@municipal.gov.in', pass: 'JunsonoSuper@2026!' },
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -382,8 +365,8 @@ export const AuthModal: React.FC = () => {
                       onClick={() => handleQuickAdminSelect(item.id, item.email, item.pass)}
                       className={`text-left p-2 rounded-lg border text-xs cursor-pointer transition-all ${
                         adminDept === item.id
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-[var(--green)] font-semibold text-emerald-950 dark:text-emerald-200'
-                          : 'bg-[var(--bg)] border-[var(--line)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-[var(--green)] font-semibold text-emerald-900 dark:text-emerald-200 ring-1 ring-[var(--green)]'
+                          : 'bg-white dark:bg-[#132A1F] border-[var(--line)] text-[var(--ink-soft)] hover:text-[var(--ink)]'
                       }`}
                     >
                       <span className="block truncate">{item.name}</span>
@@ -395,7 +378,7 @@ export const AuthModal: React.FC = () => {
               <div className="space-y-2.5">
                 <div>
                   <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
-                    Officer Email / User ID:
+                    Official Email Address:
                   </label>
                   <div className="relative">
                     <Mail className="w-3.5 h-3.5 text-[var(--ink-soft)] absolute left-3 top-3" />
@@ -404,29 +387,30 @@ export const AuthModal: React.FC = () => {
                       required
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--bg)] font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-white dark:bg-[#132A1F] font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
-                    Security Passkey / PIN:
+                    Official Password / Key:
                   </label>
                   <div className="relative">
                     <KeyRound className="w-3.5 h-3.5 text-[var(--ink-soft)] absolute left-3 top-3" />
                     <input
                       type="password"
+                      required
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--bg)] font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[var(--line)] bg-white dark:bg-[#132A1F] font-mono text-[var(--ink)] focus:outline-none focus:border-[var(--green)]"
                     />
                   </div>
                 </div>
               </div>
 
               {adminError && (
-                <p className="text-xs text-[var(--brick)] bg-red-50 dark:bg-red-950/40 p-2 rounded border border-red-200 dark:border-red-800">
+                <p className="text-xs text-red-700 bg-red-50 dark:bg-red-950/40 p-2.5 rounded-lg border border-red-200 dark:border-red-800">
                   {adminError}
                 </p>
               )}
@@ -439,7 +423,7 @@ export const AuthModal: React.FC = () => {
                 {isAdminLoggingIn ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Authenticating Department Officer...</span>
+                    <span>Verifying Official Credentials...</span>
                   </>
                 ) : (
                   <>

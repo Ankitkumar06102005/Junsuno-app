@@ -6,9 +6,10 @@ import { AdminDashboard } from './components/AdminDashboard/AdminDashboard';
 import { SuperAdminOverview } from './components/SuperAdmin/SuperAdminOverview';
 import { SupportedLanguage } from './types';
 import { TRANSLATIONS } from './i18n/translations';
-import { FileText, Search, Shield, Building2, User, Sparkles, CheckCircle2, Lock } from 'lucide-react';
+import { FileText, Search, Shield, Building2, User, Sparkles, CheckCircle2, Lock, Home, ArrowLeft } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/Auth/AuthModal';
+import { LandingPortal } from './components/Auth/LandingPortal';
 
 function AppContent() {
   const { user, openAuthModal } = useAuth();
@@ -17,6 +18,9 @@ function AppContent() {
   const [role, setRole] = useState<'citizen' | 'admin' | 'superadmin'>('citizen');
   const [citizenTab, setCitizenTab] = useState<'file' | 'track'>('file');
   const [selectedDeptId, setSelectedDeptId] = useState<string>('dept-roads');
+
+  // Entry / Landing Portal state: Unauthenticated visitors land on entry page first
+  const [guestCitizenMode, setGuestCitizenMode] = useState<boolean>(false);
 
   // Search/Ticket deep-link state
   const [searchTicketQuery, setSearchTicketQuery] = useState<string>('');
@@ -72,7 +76,14 @@ function AppContent() {
 
   // Handle viewing a newly submitted grievance in the ledger
   const handleViewGrievance = (complaintId: string) => {
+    setGuestCitizenMode(true);
     setSearchTicketQuery(complaintId);
+    setCitizenTab('track');
+  };
+
+  const handleTrackFromLanding = (ticketId: string) => {
+    setSearchTicketQuery(ticketId);
+    setGuestCitizenMode(true);
     setCitizenTab('track');
   };
 
@@ -94,111 +105,157 @@ function AppContent() {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {/* CITIZEN PORTAL */}
-        {role === 'citizen' && (
-          <div>
-            {/* Citizen Secondary Tab Strip */}
-            <div className="border-b border-[var(--line)] bg-[var(--card)] sticky top-14 z-30">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    onClick={() => {
-                      setCitizenTab('file');
-                      setSearchTicketQuery('');
-                    }}
-                    className={`py-3 px-4 text-xs font-semibold border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${
-                      citizenTab === 'file'
-                        ? 'border-[var(--green)] text-[var(--green)] font-bold'
-                        : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>{t.fileGrievance}</span>
-                  </button>
+        {/* If user is not authenticated and hasn't chosen guest mode, ALWAYS START ON THE LANDING / ENTRY LOGIN PAGE */}
+        {!user && !guestCitizenMode ? (
+          <LandingPortal
+            language={language}
+            onTrackTicket={handleTrackFromLanding}
+            onEnterAsGuest={() => setGuestCitizenMode(true)}
+          />
+        ) : (
+          <>
+            {/* CITIZEN PORTAL */}
+            {role === 'citizen' && (
+              <div>
+                {/* Guest Navigation Banner (if accessing without login) */}
+                {!user && guestCitizenMode && (
+                  <div className="bg-emerald-100 dark:bg-emerald-950/80 border-b border-emerald-300 dark:border-emerald-800 px-4 py-2 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                      <span>Guest Citizen Mode — Direct Grievance Registration</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openAuthModal('citizen')}
+                        className="text-emerald-800 dark:text-emerald-300 font-semibold underline hover:text-emerald-950 cursor-pointer"
+                      >
+                        Sign in via OTP for SMS Alerts
+                      </button>
+                      <button
+                        onClick={() => setGuestCitizenMode(false)}
+                        className="px-2 py-0.5 rounded bg-white dark:bg-emerald-900 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-100 font-medium hover:bg-emerald-50 cursor-pointer flex items-center gap-1"
+                      >
+                        <ArrowLeft className="w-3 h-3" />
+                        <span>Return to Main Login</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-                  <button
-                    onClick={() => setCitizenTab('track')}
-                    className={`py-3 px-4 text-xs font-semibold border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${
-                      citizenTab === 'track'
-                        ? 'border-[var(--green)] text-[var(--green)] font-bold'
-                        : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                    }`}
-                  >
-                    <Search className="w-4 h-4" />
-                    <span>{t.trackGrievance}</span>
-                  </button>
+                {/* Citizen Secondary Tab Strip */}
+                <div className="border-b border-[var(--line)] bg-[var(--card)] sticky top-14 z-30">
+                  <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <button
+                        onClick={() => {
+                          setCitizenTab('file');
+                          setSearchTicketQuery('');
+                        }}
+                        className={`py-3 px-4 text-xs font-semibold border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${
+                          citizenTab === 'file'
+                            ? 'border-[var(--green)] text-[var(--green)] font-bold'
+                            : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>{t.fileGrievance}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCitizenTab('track')}
+                        className={`py-3 px-4 text-xs font-semibold border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${
+                          citizenTab === 'track'
+                            ? 'border-[var(--green)] text-[var(--green)] font-bold'
+                            : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                        }`}
+                      >
+                        <Search className="w-4 h-4" />
+                        <span>{t.trackGrievance}</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] text-[var(--ink-soft)] font-mono">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>AI Multilingual Triaging Active</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-2 text-[11px] text-[var(--ink-soft)] font-mono">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>AI Triaging Active</span>
-                </div>
+                {/* Tab Views */}
+                {citizenTab === 'file' ? (
+                  <GrievanceWizard
+                    language={language}
+                    onViewGrievance={handleViewGrievance}
+                    onGoToLedger={() => setCitizenTab('track')}
+                  />
+                ) : (
+                  <PublicTracker
+                    language={language}
+                    initialQuery={searchTicketQuery}
+                    onNewComplaintClick={() => setCitizenTab('file')}
+                  />
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Tab Views */}
-            {citizenTab === 'file' ? (
-              <GrievanceWizard
+            {/* DEPARTMENT ADMIN PORTAL */}
+            {role === 'admin' && (
+              <AdminDashboard
                 language={language}
-                onViewGrievance={handleViewGrievance}
-                onGoToLedger={() => setCitizenTab('track')}
-              />
-            ) : (
-              <PublicTracker
-                language={language}
-                initialQuery={searchTicketQuery}
-                onNewComplaintClick={() => setCitizenTab('file')}
+                selectedDeptId={selectedDeptId}
+                onSelectDeptId={setSelectedDeptId}
               />
             )}
-          </div>
-        )}
 
-        {/* DEPARTMENT ADMIN PORTAL */}
-        {role === 'admin' && (
-          <AdminDashboard
-            language={language}
-            selectedDeptId={selectedDeptId}
-            onSelectDeptId={setSelectedDeptId}
-          />
-        )}
-
-        {/* SUPER ADMIN OVERVIEW */}
-        {role === 'superadmin' && (
-          <SuperAdminOverview
-            onSelectDepartment={(deptId) => {
-              setSelectedDeptId(deptId);
-              setRole('admin');
-            }}
-          />
+            {/* SUPER ADMIN OVERVIEW */}
+            {role === 'superadmin' && (
+              <SuperAdminOverview
+                onSelectDepartment={(deptId) => {
+                  setSelectedDeptId(deptId);
+                  setRole('admin');
+                }}
+              />
+            )}
+          </>
         )}
       </main>
 
       {/* Global Auth Modal */}
       <AuthModal />
 
-      {/* Institutional Civic Footer */}
-      <footer className="border-t border-[var(--line)] bg-[var(--card)] py-6 text-xs text-[var(--ink-soft)] mt-auto">
+      {/* Institutional Civic Footer in Green & White Mix */}
+      <footer className="border-t border-[var(--line)] bg-white dark:bg-[#0D2116] py-6 text-xs text-[var(--ink-soft)] mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-[var(--ink)]">Junsono (जनसुनो)</span>
-            <span>·</span>
-            <span>Municipal Corporation Grievance Redressal</span>
-            <span>·</span>
-            <span>Integrated Civic Portal</span>
-            <span>·</span>
-            <button
-              onClick={() => openAuthModal('admin')}
-              className="text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer ml-1"
-            >
-              <Lock className="w-3 h-3 text-amber-500" />
-              <span>Municipal Officer Access</span>
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="font-serif-civic font-bold text-emerald-950 dark:text-emerald-100">
+              Junsono (जनसुनो)
+            </span>
+            <span className="opacity-40">|</span>
+            <span className="text-[11px]">
+              Civic Redressal & Municipal Operations System
+            </span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>Powered by Gemini 2.5 Flash & Multilingual NLP</span>
-            <span>·</span>
-            <span className="font-mono">Interactive Map & Geotagging</span>
+          <div className="flex flex-wrap items-center gap-4 text-[11px]">
+            <span>Municipal Engineering Helpline: 1800-180-2026</span>
+            <span className="opacity-40">|</span>
+            <button
+              onClick={() => setGuestCitizenMode(false)}
+              className="text-emerald-800 dark:text-emerald-300 hover:underline cursor-pointer font-medium flex items-center gap-1"
+            >
+              <Home className="w-3 h-3" />
+              <span>Main Entry Portal</span>
+            </button>
+            <span className="opacity-40">|</span>
+            {/* Discrete Official Staff Link */}
+            <button
+              onClick={() => openAuthModal('admin')}
+              className="text-emerald-800 dark:text-emerald-300 hover:text-emerald-950 flex items-center gap-1 cursor-pointer font-semibold underline"
+              title="Restricted official access"
+            >
+              <Lock className="w-3 h-3 text-emerald-700" />
+              <span>Official Municipal Staff Login</span>
+            </button>
           </div>
         </div>
       </footer>
@@ -206,10 +263,12 @@ function AppContent() {
   );
 }
 
-export default function App() {
+export function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
 }
+
+export default App;

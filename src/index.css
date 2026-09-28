@@ -2,31 +2,31 @@
 
 @layer base {
   :root {
-    --bg: #F3F6F0;
-    --bg2: #EAF0E4;
-    --ink: #1C2620;
-    --ink-soft: #4B564C;
-    --green: #1F4D3A;
-    --green-deep: #153529;
-    --ochre: #B8862E;
-    --brick: #8C3B2E;
-    --card: #FDFEFC;
-    --line: #D3DBCB;
+    --bg: #F8FAF8;
+    --bg2: #F0FDF4;
+    --ink: #0F1F17;
+    --ink-soft: #375344;
+    --green: #15803D;
+    --green-deep: #0D4A2B;
+    --green-light: #DCFCE7;
+    --green-subtle: #F0FDF4;
+    --card: #FFFFFF;
+    --line: #DDEBE0;
     --font-heading: 'Source Serif 4', Georgia, serif;
     --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   .dark {
-    --bg: #141C17;
-    --bg2: #1B241D;
-    --ink: #EAF0E4;
-    --ink-soft: #AEBBAB;
-    --green: #5B9A80;
-    --green-deep: #3D735D;
-    --ochre: #D4A347;
-    --brick: #C45B4B;
-    --card: #1E271F;
-    --line: #2C392F;
+    --bg: #09170F;
+    --bg2: #0F2418;
+    --ink: #F0FDF4;
+    --ink-soft: #A7F3D0;
+    --green: #22C55E;
+    --green-deep: #16A34A;
+    --green-light: #1A3828;
+    --green-subtle: #0F291B;
+    --card: #0F2117;
+    --line: #1B3D2A;
   }
 
   /* Accessibility font sizing */
@@ -42,26 +42,22 @@
   /* High contrast mode */
   .high-contrast {
     --bg: #FFFFFF;
-    --bg2: #F0F0F0;
+    --bg2: #F0FFF0;
     --ink: #000000;
     --ink-soft: #111111;
-    --green: #004D25;
-    --green-deep: #002B14;
-    --ochre: #8F5B00;
-    --brick: #8B0000;
+    --green: #006020;
+    --green-deep: #003311;
     --card: #FFFFFF;
     --line: #000000;
   }
   .dark.high-contrast {
     --bg: #000000;
-    --bg2: #111111;
+    --bg2: #051A0B;
     --ink: #FFFFFF;
     --ink-soft: #E0E0E0;
-    --green: #00FF7F;
-    --green-deep: #00D060;
-    --ochre: #FFD700;
-    --brick: #FF4500;
-    --card: #0A0A0A;
+    --green: #00FF66;
+    --green-deep: #00CC52;
+    --card: #051208;
     --line: #FFFFFF;
   }
 }

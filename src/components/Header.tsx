@@ -37,11 +37,11 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="border-b border-[var(--line)] bg-[var(--card)] sticky top-0 z-40 transition-colors shadow-2xs">
       {/* Top Civic Jurisdiction Bar */}
-      <div className="bg-[var(--green-deep)] text-[#EAF0E4] px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-[#2C392F]">
+      <div className="bg-emerald-900 text-emerald-100 px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800">
         <div className="flex items-center gap-3">
-          <span className="font-semibold tracking-wide">MUNICIPAL CORPORATION CIVIC GRIEVANCE REGISTER</span>
+          <span className="font-semibold tracking-wide text-white">MUNICIPAL CORPORATION CIVIC GRIEVANCE REGISTER</span>
           <span className="opacity-40 hidden sm:inline">|</span>
-          <span className="opacity-80 hidden sm:inline">Central Redressal & Triaging Division</span>
+          <span className="opacity-80 hidden sm:inline text-emerald-200">Central Redressal & Triaging Division</span>
         </div>
 
         {/* Accessibility, Staff Link & Language Strip */}
@@ -50,24 +50,24 @@ export const Header: React.FC<HeaderProps> = ({
           {!isOfficerOrAdmin && (
             <button
               onClick={() => openAuthModal('admin')}
-              className="text-[11px] text-emerald-200 hover:text-white flex items-center gap-1 font-medium bg-[#153529] hover:bg-[#1a4233] px-2 py-0.5 rounded border border-[#2C392F] cursor-pointer transition-colors"
+              className="text-[11px] text-white hover:text-emerald-100 flex items-center gap-1 font-medium bg-emerald-800 hover:bg-emerald-700 px-2.5 py-0.5 rounded-md border border-emerald-700 cursor-pointer transition-colors"
               title="Official municipal department credentials required"
             >
-              <Lock className="w-3 h-3 text-amber-300" />
+              <Lock className="w-3 h-3 text-emerald-300" />
               <span>Official Staff Login</span>
             </button>
           )}
 
           {/* User Sign-In / Account Indicator */}
           {user ? (
-            <div className="flex items-center gap-2 pr-2 border-r border-[#2C392F]">
+            <div className="flex items-center gap-2 pr-2 border-r border-emerald-800">
               <span className="text-[11px] font-medium text-emerald-200 flex items-center gap-1">
                 {user.role === 'citizen' ? (
                   <User className="w-3 h-3 text-emerald-300" />
                 ) : (
-                  <Lock className="w-3 h-3 text-amber-300" />
+                  <Lock className="w-3 h-3 text-emerald-300" />
                 )}
-                <span className="truncate max-w-[140px] font-semibold">{user.name}</span>
+                <span className="truncate max-w-[140px] font-semibold text-white">{user.name}</span>
               </span>
               <button
                 onClick={logout}
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={() => openAuthModal('citizen')}
-              className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[var(--green)] hover:bg-emerald-700 px-2 py-0.5 rounded cursor-pointer transition-colors"
+              className="flex items-center gap-1 text-[11px] font-semibold text-white bg-emerald-700 hover:bg-emerald-600 px-2.5 py-0.5 rounded-md cursor-pointer transition-colors"
             >
               <LogIn className="w-3 h-3" />
               <span>Citizen Sign In (OTP)</span>
@@ -123,8 +123,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {/* Language Picker Dropdown */}
-          <div className="flex items-center gap-1 bg-[#153529] border border-[#2C392F] rounded px-2 py-0.5">
-            <Globe className="w-3.5 h-3.5 opacity-80" />
+          <div className="flex items-center gap-1 bg-emerald-800 border border-emerald-700 rounded px-2 py-0.5">
+            <Globe className="w-3.5 h-3.5 opacity-80 text-emerald-200" />
             <select
               value={language}
               onChange={(e) => onLanguageChange(e.target.value as SupportedLanguage)}
@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-label="Select language"
             >
               {LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code} className="bg-[#1C2620] text-white">
+                <option key={lang.code} value={lang.code} className="bg-emerald-950 text-white">
                   {lang.nativeName} ({lang.label})
                 </option>
               ))}
