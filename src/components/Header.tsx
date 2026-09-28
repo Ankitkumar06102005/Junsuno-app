@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, Moon, Sun, Eye, Globe, Building2, User, ShieldCheck, LogIn, LogOut, Lock } from 'lucide-react';
+import { Volume2, Moon, Sun, Eye, Globe, Building2, User, ShieldCheck, LogIn, LogOut, Lock, ExternalLink } from 'lucide-react';
 import { LANGUAGES, TRANSLATIONS } from '../i18n/translations';
 import { SupportedLanguage } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -32,33 +32,42 @@ export const Header: React.FC<HeaderProps> = ({
   const t = TRANSLATIONS[language] || TRANSLATIONS.en;
   const { user, logout, openAuthModal } = useAuth();
 
-  const handleRoleClick = (newRole: 'citizen' | 'admin' | 'superadmin') => {
-    // If selecting admin or superadmin and not logged in as admin, trigger login modal
-    if ((newRole === 'admin' || newRole === 'superadmin') && (!user || (user.role !== 'admin' && user.role !== 'superadmin'))) {
-      openAuthModal('admin');
-      return;
-    }
-    onRoleChange(newRole);
-  };
+  const isOfficerOrAdmin = user && (user.role === 'admin' || user.role === 'superadmin');
 
   return (
-    <header className="border-b border-[var(--line)] bg-[var(--card)] sticky top-0 z-40 transition-colors">
+    <header className="border-b border-[var(--line)] bg-[var(--card)] sticky top-0 z-40 transition-colors shadow-2xs">
       {/* Top Civic Jurisdiction Bar */}
       <div className="bg-[var(--green-deep)] text-[#EAF0E4] px-4 py-1.5 text-xs flex flex-wrap items-center justify-between gap-2 border-b border-[#2C392F]">
         <div className="flex items-center gap-3">
-          <span className="font-medium tracking-wide">MUNICIPAL CORPORATION CIVIC GRIEVANCE REGISTER</span>
-          <span className="opacity-40">|</span>
-          <span className="opacity-80">Central Redressal & Triaging Division</span>
+          <span className="font-semibold tracking-wide">MUNICIPAL CORPORATION CIVIC GRIEVANCE REGISTER</span>
+          <span className="opacity-40 hidden sm:inline">|</span>
+          <span className="opacity-80 hidden sm:inline">Central Redressal & Triaging Division</span>
         </div>
 
-        {/* Accessibility & Language Strip */}
-        <div className="flex items-center gap-3">
-          {/* User Sign-In / Account Strip */}
+        {/* Accessibility, Staff Link & Language Strip */}
+        <div className="flex items-center gap-2.5">
+          {/* Official Staff Portal Trigger (For unauthorized staff visitors) */}
+          {!isOfficerOrAdmin && (
+            <button
+              onClick={() => openAuthModal('admin')}
+              className="text-[11px] text-emerald-200 hover:text-white flex items-center gap-1 font-medium bg-[#153529] hover:bg-[#1a4233] px-2 py-0.5 rounded border border-[#2C392F] cursor-pointer transition-colors"
+              title="Official municipal department credentials required"
+            >
+              <Lock className="w-3 h-3 text-amber-300" />
+              <span>Official Staff Login</span>
+            </button>
+          )}
+
+          {/* User Sign-In / Account Indicator */}
           {user ? (
             <div className="flex items-center gap-2 pr-2 border-r border-[#2C392F]">
               <span className="text-[11px] font-medium text-emerald-200 flex items-center gap-1">
-                {user.role === 'citizen' ? <User className="w-3 h-3" /> : <Lock className="w-3 h-3 text-amber-300" />}
-                <span className="truncate max-w-[120px]">{user.name}</span>
+                {user.role === 'citizen' ? (
+                  <User className="w-3 h-3 text-emerald-300" />
+                ) : (
+                  <Lock className="w-3 h-3 text-amber-300" />
+                )}
+                <span className="truncate max-w-[140px] font-semibold">{user.name}</span>
               </span>
               <button
                 onClick={logout}
@@ -66,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Sign out"
               >
                 <LogOut className="w-3 h-3" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </button>
             </div>
           ) : (
@@ -75,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[var(--green)] hover:bg-emerald-700 px-2 py-0.5 rounded cursor-pointer transition-colors"
             >
               <LogIn className="w-3 h-3" />
-              <span>Sign In / Login</span>
+              <span>Citizen Sign In (OTP)</span>
             </button>
           )}
 
@@ -100,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Toggle high contrast"
           >
             <Eye className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Contrast</span>
+            <span className="hidden md:inline">Contrast</span>
           </button>
 
           {/* Dark Mode Toggle */}
@@ -158,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {t.appName}
               </h1>
               <span className="text-xs font-mono font-medium px-1.5 py-0.5 rounded border border-[var(--line)] text-[var(--ink-soft)] bg-[var(--bg)]">
-                Municipal Hub
+                Civic Redressal Portal
               </span>
             </div>
             <p className="text-xs text-[var(--ink-soft)] font-sans-civic line-clamp-1">
@@ -167,48 +176,72 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Role Switching Control */}
-        <div className="flex items-center p-1 bg-[var(--bg2)] border border-[var(--line)] rounded-lg">
-          <button
-            onClick={() => handleRoleClick('citizen')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              currentRole === 'citizen'
-                ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-semibold'
-                : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>{t.citizenPortal}</span>
-          </button>
+        {/* Dynamic Context Controls */}
+        {isOfficerOrAdmin ? (
+          // ONLY VISIBLE TO AUTHENTICATED OFFICERS & ADMINS
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col text-right pr-2 border-r border-[var(--line)]">
+              <span className="text-[11px] font-bold text-[var(--ink)]">
+                {user?.role === 'superadmin' ? 'City Command Headquarters' : user?.department_name}
+              </span>
+              <span className="text-[10px] text-[var(--ink-soft)] font-mono">
+                {user?.name}
+              </span>
+            </div>
 
-          <button
-            onClick={() => handleRoleClick('admin')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              currentRole === 'admin'
-                ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-semibold'
-                : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>{t.adminPortal}</span>
-            {user && (user.role === 'admin' || user.role === 'superadmin') && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            )}
-          </button>
+            <div className="flex items-center p-1 bg-[var(--bg2)] border border-[var(--line)] rounded-lg">
+              {user?.role === 'superadmin' && (
+                <button
+                  onClick={() => onRoleChange('superadmin')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                    currentRole === 'superadmin'
+                      ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-bold'
+                      : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                  <span>City Command</span>
+                </button>
+              )}
 
-          <button
-            onClick={() => handleRoleClick('superadmin')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              currentRole === 'superadmin'
-                ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-semibold'
-                : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{t.superAdminPortal}</span>
-            <span className="sm:hidden">Command</span>
-          </button>
-        </div>
+              <button
+                onClick={() => onRoleChange('admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  currentRole === 'admin'
+                    ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-bold'
+                    : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>
+                  {user?.role === 'admin' ? `${user.department_name?.split('&')[0]} Inbox` : 'Department Queue'}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              </button>
+
+              <button
+                onClick={() => onRoleChange('citizen')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  currentRole === 'citizen'
+                    ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-bold'
+                    : 'text-[var(--ink-soft)] hover:text-[var(--ink)]'
+                }`}
+                title="Preview civic public view"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Public View</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          // NORMAL CITIZEN VIEW: Admin & Super Admin are COMPLETELY HIDDEN
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-[var(--ink-soft)] bg-[var(--bg2)] px-3 py-1.5 rounded-lg border border-[var(--line)] flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Public Citizen Portal Active</span>
+            </span>
+          </div>
+        )}
       </div>
     </header>
   );

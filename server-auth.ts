@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import https from 'https';
 import { Request, Response, NextFunction } from 'express';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'junsono_civic_auth_secret_key_84920491823758291024';
@@ -71,7 +72,6 @@ export function verifyJwt(token: string): AuthUserPayload | null {
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
 
-    // Constant-time buffer comparison to prevent timing attacks
     const sigA = Buffer.from(signature);
     const sigB = Buffer.from(expectedSignature);
     if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) {
@@ -81,7 +81,7 @@ export function verifyJwt(token: string): AuthUserPayload | null {
     const payload: AuthUserPayload = JSON.parse(base64UrlDecode(encodedPayload));
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp < now) {
-      return null; // Expired token
+      return null;
     }
 
     return payload;
@@ -91,7 +91,219 @@ export function verifyJwt(token: string): AuthUserPayload | null {
 }
 
 // ----------------------------------------------------
-// 2. Cryptographic OTP Storage & Throttling
+// 2. Official Municipal Department Credentials & Passwords
+// ----------------------------------------------------
+interface OfficerRecord {
+  email: string;
+  passwordHash: string; // SHA-256 with salt
+  salt: string;
+  name: string;
+  role: 'admin' | 'superadmin';
+  department_id: string;
+  department_name: string;
+}
+
+function hashPassword(password: string, salt: string): string {
+  return crypto.createHmac('sha256', salt).update(password).digest('hex');
+}
+
+// Pre-seeded secure officer credentials
+const SALT = 'junsono_municipal_salt_2026';
+export const OFFICIAL_OFFICERS: Record<string, OfficerRecord> = {
+  'roads.admin@municipal.gov.in': {
+    email: 'roads.admin@municipal.gov.in',
+    passwordHash: hashPassword('Roads@2026!', SALT),
+    salt: SALT,
+    name: 'Er. Rajeshwar Sharma (Chief Engineer)',
+    role: 'admin',
+    department_id: 'dept-roads',
+    department_name: 'Roads & Infrastructure',
+  },
+  'sanitation.admin@municipal.gov.in': {
+    email: 'sanitation.admin@municipal.gov.in',
+    passwordHash: hashPassword('Swachh@2026!', SALT),
+    salt: SALT,
+    name: 'Dr. Sunita Meena (Health Officer)',
+    role: 'admin',
+    department_id: 'dept-sanitation',
+    department_name: 'Sanitation & Solid Waste',
+  },
+  'water.admin@municipal.gov.in': {
+    email: 'water.admin@municipal.gov.in',
+    passwordHash: hashPassword('JalSeva@2026!', SALT),
+    salt: SALT,
+    name: 'Shri Vikramaditya Rathore (Superintending Engineer)',
+    role: 'admin',
+    department_id: 'dept-water',
+    department_name: 'Water Supply & Sewerage',
+  },
+  'electric.admin@municipal.gov.in': {
+    email: 'electric.admin@municipal.gov.in',
+    passwordHash: hashPassword('Power@2026!', SALT),
+    salt: SALT,
+    name: 'Er. Anil Verma (Executive Engineer)',
+    role: 'admin',
+    department_id: 'dept-electricity',
+    department_name: 'Electricity & Street Lighting',
+  },
+  'health.admin@municipal.gov.in': {
+    email: 'health.admin@municipal.gov.in',
+    passwordHash: hashPassword('Arogya@2026!', SALT),
+    salt: SALT,
+    name: 'Dr. Neha Kulkarni (Chief Medical Officer)',
+    role: 'admin',
+    department_id: 'dept-health',
+    department_name: 'Public Health & Vector Control',
+  },
+  'commissioner@municipal.gov.in': {
+    email: 'commissioner@municipal.gov.in',
+    passwordHash: hashPassword('JunsonoSuper@2026!', SALT),
+    salt: SALT,
+    name: 'Shri K.K. Sharma, IAS (Municipal Commissioner)',
+    role: 'superadmin',
+    department_id: 'superadmin',
+    department_name: 'City Municipal Command',
+  },
+};
+
+export function verifyOfficerPassword(
+  email: string,
+  providedPassword?: string,
+  departmentId?: string
+): { success: boolean; officer?: OfficerRecord; error?: string } {
+  const cleanEmail = email.trim().toLowerCase();
+  let officer = OFFICIAL_OFFICERS[cleanEmail];
+
+  // If officer not found by email, try department match
+  if (!officer && departmentId) {
+    officer = Object.values(OFFICIAL_OFFICERS).find((o) => o.department_id === departmentId);
+  }
+
+  if (!officer) {
+    return { success: false, error: 'No official municipal record found for this email address.' };
+  }
+
+  if (!providedPassword) {
+    return { success: false, error: 'Password is required for officer authentication.' };
+  }
+
+  const expectedHash = officer.passwordHash;
+  const computedHash = hashPassword(providedPassword, officer.salt);
+
+  const hashA = Buffer.from(expectedHash);
+  const hashB = Buffer.from(computedHash);
+
+  // Timing safe comparison to protect against timing attacks
+  if (hashA.length !== hashB.length || !crypto.timingSafeEqual(hashA, hashB)) {
+    return { success: false, error: 'Incorrect password. Access denied.' };
+  }
+
+  return { success: true, officer };
+}
+
+// ----------------------------------------------------
+// 3. Live SMS Gateway Integration
+// ----------------------------------------------------
+export async function dispatchSmsViaGateway(phone: string, otpCode: string): Promise<boolean> {
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+
+  // 1. Twilio Live Integration
+  if (twilioSid && twilioToken && twilioFrom) {
+    return new Promise((resolve) => {
+      try {
+        const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
+        const postData = new URLSearchParams({
+          To: phone,
+          From: twilioFrom,
+          Body: `Your Junsono (जनसुनो) verification OTP is ${otpCode}. Valid for 5 minutes. Do not share this code.`,
+        }).toString();
+
+        const req = https.request(
+          {
+            hostname: 'api.twilio.com',
+            port: 443,
+            path: `/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+            method: 'POST',
+            headers: {
+              Authorization: `Basic ${auth}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Content-Length': Buffer.byteLength(postData),
+            },
+          },
+          (res) => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              console.log(`[SMS Gateway] Dispatched live SMS to ${phone} via Twilio.`);
+              resolve(true);
+            } else {
+              console.warn(`[SMS Gateway] Twilio dispatch returned HTTP ${res.statusCode}`);
+              resolve(false);
+            }
+          }
+        );
+        req.on('error', (e) => {
+          console.error('[SMS Gateway] Error sending SMS via Twilio:', e);
+          resolve(false);
+        });
+        req.write(postData);
+        req.end();
+      } catch (err) {
+        console.error('[SMS Gateway] Twilio error:', err);
+        resolve(false);
+      }
+    });
+  }
+
+  // 2. Fast2SMS Integration (Indian Gateway)
+  const fast2SmsKey = process.env.FAST2SMS_API_KEY;
+  if (fast2SmsKey) {
+    return new Promise((resolve) => {
+      try {
+        const cleanNumber = phone.replace(/[^0-9]/g, '').slice(-10);
+        const postData = JSON.stringify({
+          route: 'otp',
+          variables_values: otpCode,
+          numbers: cleanNumber,
+        });
+
+        const req = https.request(
+          {
+            hostname: 'www.fast2sms.com',
+            port: 443,
+            path: '/dev/bulkV2',
+            method: 'POST',
+            headers: {
+              authorization: fast2SmsKey,
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(postData),
+            },
+          },
+          (res) => {
+            console.log(`[SMS Gateway] Fast2SMS dispatch returned status ${res.statusCode}`);
+            resolve(res.statusCode === 200);
+          }
+        );
+        req.on('error', () => resolve(false));
+        req.write(postData);
+        req.end();
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+
+  // 3. Fallback: Local Server Console Logging for Development
+  console.log(`\n=================================================`);
+  console.log(`[JUNSONO AUTH GATEWAY] Secure SMS OTP for: ${phone}`);
+  console.log(`CODE: >>> ${otpCode} <<< (Valid for 5 minutes)`);
+  console.log(`(Configure TWILIO_ACCOUNT_SID or FAST2SMS_API_KEY for live network dispatch)`);
+  console.log(`=================================================\n`);
+  return true;
+}
+
+// ----------------------------------------------------
+// 4. Cryptographic OTP Storage & Throttling
 // ----------------------------------------------------
 interface OtpRecord {
   code: string;
@@ -106,7 +318,6 @@ interface OtpRecord {
 
 const otpStore = new Map<string, OtpRecord>();
 
-// Clean up expired OTPs periodically
 setInterval(() => {
   const now = Date.now();
   for (const [key, record] of otpStore.entries()) {
@@ -116,7 +327,7 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-export function requestOtp(
+export async function requestOtp(
   identifier: string,
   options: {
     name?: string;
@@ -124,12 +335,11 @@ export function requestOtp(
     department_id?: string;
     department_name?: string;
   } = {}
-): { success: boolean; waitSeconds?: number; debug_code?: string; message: string } {
+): Promise<{ success: boolean; waitSeconds?: number; debug_code?: string; message: string }> {
   const cleanId = identifier.trim().toLowerCase();
   const now = Date.now();
 
   const existing = otpStore.get(cleanId);
-  // Rate limit: enforce 30 seconds cooldown between OTP requests
   if (existing && now - existing.lastSentAt < 30 * 1000) {
     const remainingSeconds = Math.ceil((30 * 1000 - (now - existing.lastSentAt)) / 1000);
     return {
@@ -139,9 +349,9 @@ export function requestOtp(
     };
   }
 
-  // Generate cryptographically secure 6-digit OTP
+  // Generate 6-digit cryptographic OTP
   const code = crypto.randomInt(100000, 999999).toString();
-  const ttlMs = 5 * 60 * 1000; // 5 minutes validity
+  const ttlMs = 5 * 60 * 1000; // 5 minutes
 
   otpStore.set(cleanId, {
     code,
@@ -154,15 +364,17 @@ export function requestOtp(
     department_name: options.department_name,
   });
 
-  console.log(`\n=================================================`);
-  console.log(`[JUNSONO AUTH GATEWAY] Secure OTP for: ${cleanId}`);
-  console.log(`CODE: >>> ${code} <<< (Valid for 5 minutes)`);
-  console.log(`=================================================\n`);
+  // Attempt live SMS dispatch if phone number
+  if (!cleanId.includes('@')) {
+    await dispatchSmsViaGateway(identifier.trim(), code);
+  } else {
+    console.log(`[Email Gateway] OTP for ${cleanId}: ${code}`);
+  }
 
   return {
     success: true,
     debug_code: process.env.NODE_ENV !== 'production' ? code : undefined,
-    message: `Verification code successfully dispatched to ${identifier}`,
+    message: `Verification code dispatched to ${identifier}`,
   };
 }
 
@@ -185,12 +397,11 @@ export function verifyOtpCode(
     return { success: false, error: 'Verification code has expired. Please request a new code.' };
   }
 
-  // Brute-force protection: max 3 attempts
   if (record.attempts >= 3) {
     otpStore.delete(cleanId);
     return {
       success: false,
-      error: 'Maximum verification attempts exceeded. For security, please request a fresh code.',
+      error: 'Maximum verification attempts exceeded. Please request a fresh code.',
     };
   }
 
@@ -203,7 +414,6 @@ export function verifyOtpCode(
     };
   }
 
-  // Code verified! Delete record to prevent replay attacks
   otpStore.delete(cleanId);
 
   const isEmail = cleanId.includes('@');
@@ -217,7 +427,7 @@ export function verifyOtpCode(
     isAuthenticated: true,
   };
 
-  const token = signJwt(user, 86400 * 7); // 7 days session
+  const token = signJwt(user, 86400 * 7);
 
   return {
     success: true,
@@ -227,7 +437,7 @@ export function verifyOtpCode(
 }
 
 // ----------------------------------------------------
-// 3. Express Middlewares & Security Guards
+// 5. Express Middlewares & Security Guards
 // ----------------------------------------------------
 export interface AuthenticatedRequest extends Request {
   user?: AuthUserPayload | null;
@@ -254,8 +464,19 @@ export function requireAdminOrOfficer(req: AuthenticatedRequest, res: Response, 
   next();
 }
 
+// Department Isolation Guard: Officers can only act on their department
+export function checkDepartmentAccess(
+  user: AuthUserPayload | null | undefined,
+  complaintDeptId: string
+): boolean {
+  if (!user) return false;
+  if (user.role === 'superadmin') return true;
+  if (user.role === 'admin' && user.department_id === complaintDeptId) return true;
+  return false;
+}
+
 // ----------------------------------------------------
-// 4. PII Data Masking & Redaction Helpers
+// 6. PII Data Masking & Redaction Helpers
 // ----------------------------------------------------
 export function maskPhoneNumber(phone?: string): string {
   if (!phone) return '+91 **********';
@@ -275,12 +496,10 @@ export function maskEmailAddress(email?: string): string {
 }
 
 export function redactComplaintForPublic(complaint: any, user: AuthUserPayload | null): any {
-  // If user is Admin or Superadmin, return full complaint
   if (user && (user.role === 'admin' || user.role === 'superadmin')) {
     return complaint;
   }
 
-  // If user is the citizen who filed this complaint (by phone or email match)
   const isOwner =
     user &&
     user.role === 'citizen' &&
@@ -291,11 +510,10 @@ export function redactComplaintForPublic(complaint: any, user: AuthUserPayload |
     return complaint;
   }
 
-  // Redact PII and internal notes for public viewers
   return {
     ...complaint,
     citizen_phone: maskPhoneNumber(complaint.citizen_phone),
     citizen_email: complaint.citizen_email ? maskEmailAddress(complaint.citizen_email) : undefined,
-    internal_notes: [], // Conceal internal officer discussions from public view
+    internal_notes: [],
   };
 }

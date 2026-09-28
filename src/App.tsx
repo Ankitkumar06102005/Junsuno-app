@@ -6,12 +6,12 @@ import { AdminDashboard } from './components/AdminDashboard/AdminDashboard';
 import { SuperAdminOverview } from './components/SuperAdmin/SuperAdminOverview';
 import { SupportedLanguage } from './types';
 import { TRANSLATIONS } from './i18n/translations';
-import { FileText, Search, Shield, Building2, User, Sparkles, CheckCircle2 } from 'lucide-react';
+import { FileText, Search, Shield, Building2, User, Sparkles, CheckCircle2, Lock } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthModal } from './components/Auth/AuthModal';
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
 
   // Navigation & Role states
   const [role, setRole] = useState<'citizen' | 'admin' | 'superadmin'>('citizen');
@@ -27,7 +27,7 @@ function AppContent() {
   const [highContrast, setHighContrast] = useState<boolean>(false);
   const [darkMode, setDarkMode] = useState<boolean>(false);
 
-  // Sync department if admin logs in
+  // Sync role strictly to authenticated session
   useEffect(() => {
     if (user && (user.role === 'admin' || user.role === 'superadmin')) {
       if (user.role === 'superadmin') {
@@ -36,6 +36,9 @@ function AppContent() {
         setRole('admin');
         if (user.department_id) setSelectedDeptId(user.department_id);
       }
+    } else {
+      // Normal public visitors are strictly locked to the Citizen view
+      setRole('citizen');
     }
   }, [user]);
 
@@ -176,16 +179,24 @@ function AppContent() {
       {/* Institutional Civic Footer */}
       <footer className="border-t border-[var(--line)] bg-[var(--card)] py-6 text-xs text-[var(--ink-soft)] mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-[var(--ink)]">Junsono (जनसुनो)</span>
             <span>·</span>
             <span>Municipal Corporation Grievance Redressal</span>
             <span>·</span>
             <span>Integrated Civic Portal</span>
+            <span>·</span>
+            <button
+              onClick={() => openAuthModal('admin')}
+              className="text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer ml-1"
+            >
+              <Lock className="w-3 h-3 text-amber-500" />
+              <span>Municipal Officer Access</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span>Powered by Gemini 2.5 Flash & Multilingual STT</span>
+            <span>Powered by Gemini 2.5 Flash & Multilingual NLP</span>
             <span>·</span>
             <span className="font-mono">Interactive Map & Geotagging</span>
           </div>

@@ -111,9 +111,11 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const handleQuickAdminSelect = (deptId: string, email: string) => {
+  const handleQuickAdminSelect = (deptId: string, email: string, defaultPass: string) => {
     setAdminDept(deptId);
     setAdminEmail(email);
+    setAdminPassword(defaultPass);
+    setAdminError(null);
   };
 
   return (
@@ -356,7 +358,7 @@ export const AuthModal: React.FC = () => {
                   Municipal Department Authentication
                 </h4>
                 <p className="text-xs text-[var(--ink-soft)] mt-0.5">
-                  Sign in with verified municipal credentials to manage grievance triage queues.
+                  Select your department to load official credentials and sign in to your dedicated queue.
                 </p>
               </div>
 
@@ -367,17 +369,17 @@ export const AuthModal: React.FC = () => {
                 </span>
                 <div className="grid grid-cols-2 gap-1.5 text-xs">
                   {[
-                    { id: 'dept-roads', name: 'Roads Dept', email: 'roads.dept@municipal.gov.in' },
-                    { id: 'dept-sanitation', name: 'Sanitation Dept', email: 'sanitation@municipal.gov.in' },
-                    { id: 'dept-water', name: 'Water Supply', email: 'watersupply@municipal.gov.in' },
-                    { id: 'dept-electricity', name: 'Street Lighting', email: 'streetlighting@municipal.gov.in' },
-                    { id: 'dept-health', name: 'Public Health', email: 'publichealth@municipal.gov.in' },
-                    { id: 'superadmin', name: 'Super Admin', email: 'commissioner@municipal.gov.in' },
+                    { id: 'dept-roads', name: 'Roads Dept', email: 'roads.admin@municipal.gov.in', pass: 'Roads@2026!' },
+                    { id: 'dept-sanitation', name: 'Sanitation Dept', email: 'sanitation.admin@municipal.gov.in', pass: 'Swachh@2026!' },
+                    { id: 'dept-water', name: 'Water Supply', email: 'watersupply@municipal.gov.in', pass: 'JalSeva@2026!' },
+                    { id: 'dept-electricity', name: 'Street Lighting', email: 'electric.admin@municipal.gov.in', pass: 'Power@2026!' },
+                    { id: 'dept-health', name: 'Public Health', email: 'health.admin@municipal.gov.in', pass: 'Arogya@2026!' },
+                    { id: 'superadmin', name: 'Super Admin', email: 'commissioner@municipal.gov.in', pass: 'JunsonoSuper@2026!' },
                   ].map((item) => (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => handleQuickAdminSelect(item.id, item.email)}
+                      onClick={() => handleQuickAdminSelect(item.id, item.email, item.pass)}
                       className={`text-left p-2 rounded-lg border text-xs cursor-pointer transition-all ${
                         adminDept === item.id
                           ? 'bg-emerald-50 dark:bg-emerald-950/40 border-[var(--green)] font-semibold text-emerald-950 dark:text-emerald-200'

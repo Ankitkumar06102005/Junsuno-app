@@ -167,11 +167,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // Reassign Department handler
+  // Automatically sync department to officer's assigned department
+  useEffect(() => {
+    if (user && user.role === 'admin' && user.department_id) {
+      if (selectedDeptId !== user.department_id) {
+        onSelectDeptId(user.department_id);
+      }
+    }
+  }, [user, selectedDeptId]);
+
+  // Reassign Department handler (Restricted strictly to Super Admin)
   const handleReassign = async () => {
     if (!selectedComplaint || !reassignDeptId) return;
-    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
-      openAuthModal('admin');
+    if (!user || user.role !== 'superadmin') {
+      alert('Inter-departmental transfer is reserved exclusively for the Municipal Commissioner (Super Admin).');
       return;
     }
     setIsUpdatingStatus(true);
@@ -269,25 +278,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {/* Department Switcher Dropdown (for testing and demo inspection) */}
+        {/* Department Switcher / Isolation Badge */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-right hidden sm:block">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[var(--ink-soft)] block">
-              Department Queue Scope:
+              Department Scope:
             </span>
           </div>
 
-          <select
-            value={selectedDeptId}
-            onChange={(e) => onSelectDeptId(e.target.value)}
-            className="px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] focus:outline-none focus:border-[var(--green)] cursor-pointer"
-          >
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} ({d.short_code})
-              </option>
-            ))}
-          </select>
+          {user?.role === 'admin' ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-xs">
+              <Building2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
+              <span className="font-semibold text-emerald-900 dark:text-emerald-200">
+                {currentDept?.name} ({currentDept?.short_code})
+              </span>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-mono bg-white dark:bg-black px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
+                Dedicated Inbox
+              </span>
+            </div>
+          ) : (
+            <select
+              value={selectedDeptId}
+              onChange={(e) => onSelectDeptId(e.target.value)}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] focus:outline-none focus:border-[var(--green)] cursor-pointer"
+            >
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.short_code})
+                </option>
+              ))}
+            </select>
+          )}
 
           {/* Navigation Tabs (Queue vs Analytics) */}
           <div className="flex items-center p-1 bg-[var(--bg2)] border border-[var(--line)] rounded-xl">

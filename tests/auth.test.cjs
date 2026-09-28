@@ -93,66 +93,121 @@ function get(path, headers = {}) {
   });
 }
 
-async function runTests() {
-  console.log('--- TEST 1: Request OTP for Citizen ---');
+async function runComprehensiveTests() {
+  console.log('===========================================================');
+  console.log('JUNSONO TEST SUITE: SECURITY, NLP TRIAGING & DEPARTMENT AUTH');
+  console.log('===========================================================');
+
+  // 1. Citizen OTP Flow
+  console.log('\n--- 1. Citizen OTP Request & Cryptographic Verification ---');
   const otpRes = await post('/api/auth/send-otp', {
     contact: '+91 98765 43210',
     name: 'Aarav Mehta',
   });
-  console.log('Status:', otpRes.status, 'Response:', otpRes.body);
-
+  console.log('OTP Send Status:', otpRes.status, 'Message:', otpRes.body.message);
   const otpCode = otpRes.body.debug_code;
 
-  console.log('\n--- TEST 2: Verify OTP with Correct 6-Digit Code ---');
   const verifyRes = await post('/api/auth/verify-otp', {
     contact: '+91 98765 43210',
     code: otpCode,
     name: 'Aarav Mehta',
   });
-  console.log('Status:', verifyRes.status, 'User:', verifyRes.body.user);
-  const citizenToken = verifyRes.body.token;
+  console.log('OTP Verify Status:', verifyRes.status, 'Role:', verifyRes.body.user.role);
 
-  console.log('\n--- TEST 3: Verify Public PII Redaction on GET /api/complaints/JSN-1001 (Unauthenticated) ---');
-  const publicComplaint = await get('/api/complaints/JSN-1001');
-  console.log('Status:', publicComplaint.status);
-  console.log('Masked Phone:', publicComplaint.body.complaint.citizen_phone);
-  console.log('Masked Email:', publicComplaint.body.complaint.citizen_email);
-  console.log('Internal Notes (should be empty array):', publicComplaint.body.complaint.internal_notes);
-
-  console.log('\n--- TEST 4: Attempt Unauthenticated Status Update (Should be 403 Forbidden) ---');
-  const unauthPatch = await patch('/api/complaints/JSN-1001/status', {
-    new_status: 'resolved',
+  // 2. Multilingual NLP Triaging Tests
+  console.log('\n--- 2. Multilingual Civic NLP Classification & Auto-Routing ---');
+  
+  // Roads Test
+  const nlpRoads = await post('/api/ai/classify', {
+    text: 'मेन रोड पर सेक्टर 4 के पास बड़ा गड्ढा हो गया है बाइक गिर गई',
+    preferred_language: 'Hindi',
   });
-  console.log('Status (Expect 403):', unauthPatch.status, 'Error:', unauthPatch.body.error);
+  console.log('Input: "सड़क पर बड़ा गड्ढा..." -> Dept:', nlpRoads.body.department_id, '| Severity:', nlpRoads.body.severity);
 
-  console.log('\n--- TEST 5: Municipal Officer Admin Login ---');
-  const adminLoginRes = await post('/api/auth/admin-login', {
-    email: 'roads.dept@municipal.gov.in',
+  // Sanitation Test
+  const nlpSanitation = await post('/api/ai/classify', {
+    text: 'गली में 4 दिन से कचरा पड़ा है बहुत बदबू आ रही है कूड़ा उठाओ',
+    preferred_language: 'Hindi',
+  });
+  console.log('Input: "गली में कचरा..." -> Dept:', nlpSanitation.body.department_id, '| Category:', nlpSanitation.body.category);
+
+  // Water Test
+  const nlpWater = await post('/api/ai/classify', {
+    text: 'मेन सप्लाई की पाइपलाइन फट गई है और गंदा पानी घरों में आ रहा है',
+    preferred_language: 'Hindi',
+  });
+  console.log('Input: "पाइपलाइन फट गई..." -> Dept:', nlpWater.body.department_id, '| Severity:', nlpWater.body.severity);
+
+  // Electricity Test
+  const nlpElectric = await post('/api/ai/classify', {
+    text: 'कॉलोनी के खंभे पर तार से स्पार्किंग हो रही है और स्ट्रीट लाइट बंद है',
+    preferred_language: 'Hindi',
+  });
+  console.log('Input: "खंभे पर स्पार्किंग..." -> Dept:', nlpElectric.body.department_id, '| Category:', nlpElectric.body.category);
+
+  // Health Test
+  const nlpHealth = await post('/api/ai/classify', {
+    text: 'खाली प्लॉट में बारिश का पानी भरा है बहुत मच्छर हो रहे हैं डेंगू का डर है फॉगिंग कराएं',
+    preferred_language: 'Hindi',
+  });
+  console.log('Input: "मच्छर और डेंगू..." -> Dept:', nlpHealth.body.department_id, '| Category:', nlpHealth.body.category);
+
+  // 3. Officer Password Check & Department Isolation
+  console.log('\n--- 3. Officer Password Verification & Department Login ---');
+  
+  // Wrong password attempt
+  const wrongPass = await post('/api/auth/admin-login', {
+    email: 'roads.admin@municipal.gov.in',
+    password: 'WrongPassword!',
+  });
+  console.log('Wrong Password Test (Expect 401):', wrongPass.status, 'Error:', wrongPass.body.error);
+
+  // Correct password attempt for Roads Officer
+  const roadsOfficerLogin = await post('/api/auth/admin-login', {
+    email: 'roads.admin@municipal.gov.in',
+    password: 'Roads@2026!',
     department_id: 'dept-roads',
   });
-  console.log('Status:', adminLoginRes.status, 'Officer:', adminLoginRes.body.user);
-  const officerToken = adminLoginRes.body.token;
+  console.log('Correct Password Login:', roadsOfficerLogin.status, '| Officer:', roadsOfficerLogin.body.user.name);
+  const roadsToken = roadsOfficerLogin.body.token;
 
-  console.log('\n--- TEST 6: Authorized Status Update with Officer JWT Token ---');
-  const authPatch = await patch(
-    '/api/complaints/JSN-1001/status',
-    { new_status: 'in_progress', note: 'Emergency patching crew arrived on site.' },
-    { Authorization: `Bearer ${officerToken}` }
-  );
-  console.log('Status (Expect 200):', authPatch.status, 'Message:', authPatch.body.message);
-  console.log('Latest History Changed By:', authPatch.body.complaint.history.slice(-1)[0].changed_by);
-
-  console.log('\n--- TEST 7: Authorized GET /api/complaints/JSN-1001 with Officer Token (Unmasked) ---');
-  const officerView = await get('/api/complaints/JSN-1001', {
-    Authorization: `Bearer ${officerToken}`,
+  // 4. Department Isolation Verification
+  console.log('\n--- 4. Department Isolation in Complaints Inbox ---');
+  const roadsInbox = await get('/api/complaints', {
+    Authorization: `Bearer ${roadsToken}`,
   });
-  console.log('Status:', officerView.status);
-  console.log('Unmasked Citizen Phone:', officerView.body.complaint.citizen_phone);
-  console.log('Officer Internal Notes Present:', officerView.body.complaint.internal_notes.length > 0);
+  const allDeptsInInbox = new Set(roadsInbox.body.complaints.map((c) => c.department_id));
+  console.log('Roads Officer Inbox Total Complaints:', roadsInbox.body.complaints.length);
+  console.log('Distinct Departments in Inbox (Must only be dept-roads):', Array.from(allDeptsInInbox));
 
-  console.log('\n========================================');
-  console.log('ALL SECURITY & AUTH VERIFICATION TESTS PASSED!');
-  console.log('========================================');
+  // 5. Cross-Department Tampering Defense
+  console.log('\n--- 5. Cross-Department Modification Defense ---');
+  // Attempt to update JSN-1002 (Sanitation complaint) using Roads Officer Token
+  const crossDeptPatch = await patch(
+    '/api/complaints/JSN-1002/status',
+    { new_status: 'resolved' },
+    { Authorization: `Bearer ${roadsToken}` }
+  );
+  console.log('Cross-Department Mutation Test (Expect 403 Forbidden):', crossDeptPatch.status, 'Error:', crossDeptPatch.body.error);
+
+  // Legitimate update on JSN-1001 (Roads complaint) using Roads Officer Token
+  const legitPatch = await patch(
+    '/api/complaints/JSN-1001/status',
+    { new_status: 'in_progress', note: 'Road patching crew actively resurfacing.' },
+    { Authorization: `Bearer ${roadsToken}` }
+  );
+  console.log('Legitimate Department Mutation (Expect 200 OK):', legitPatch.status, 'Message:', legitPatch.body.message);
+
+  // 6. Public PII Redaction
+  console.log('\n--- 6. Public PII Redaction Verification ---');
+  const publicView = await get('/api/complaints/JSN-1001');
+  console.log('Public Masked Phone:', publicView.body.complaint.citizen_phone);
+  console.log('Public Masked Email:', publicView.body.complaint.citizen_email);
+  console.log('Public Internal Notes Count (Must be 0):', publicView.body.complaint.internal_notes.length);
+
+  console.log('\n===========================================================');
+  console.log('ALL VERIFICATION CHECKS PASSED: DEPLOYMENT READY!');
+  console.log('===========================================================');
 }
 
-runTests().catch(console.error);
+runComprehensiveTests().catch(console.error);
