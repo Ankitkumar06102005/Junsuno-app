@@ -172,7 +172,7 @@ export function verifyOfficerPassword(
   departmentId?: string
 ): { success: boolean; officer?: OfficerRecord; error?: string } {
   const cleanEmail = email.trim().toLowerCase();
-  let officer = OFFICIAL_OFFICERS[cleanEmail];
+  let officer: OfficerRecord | undefined = OFFICIAL_OFFICERS[cleanEmail];
 
   // If officer not found by email, try department match
   if (!officer && departmentId) {
