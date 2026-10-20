@@ -175,7 +175,7 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
             </form>
           </div>
         </div>
-        <p className="sr-only">Animated walking Open Peeps illustration, adapted from Skiper UI component 39.</p>
+        <p className="relative z-10 mt-4 text-center text-[10px] text-emerald-800/70 dark:text-emerald-200/60">Illustrations by <a href="https://www.openpeeps.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2">Open Peeps</a> · Animation adapted from <a href="https://skiper-ui.com/v1/skiper39" target="_blank" rel="noreferrer" className="underline underline-offset-2">Skiper UI #39</a></p>
       </section>
 
       <div className="mx-auto max-w-6xl space-y-10">
