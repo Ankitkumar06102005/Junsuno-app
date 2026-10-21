@@ -39,6 +39,14 @@ async function readJsonResponse<T = any>(response: Response): Promise<T> {
   }
 }
 
+async function readErrorResponse(response: Response): Promise<{ error?: string }> {
+  try {
+    return await readJsonResponse<{ error?: string }>(response);
+  } catch {
+    return {};
+  }
+}
+
 export function setAuthToken(token: string | null) {
   currentToken = token;
   try {
@@ -85,7 +93,7 @@ export async function sendOtp(
   });
 
   if (!res.ok) {
-    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const data = await readErrorResponse(res);
     throw new Error(data.error || 'Failed to dispatch verification OTP');
   }
 
@@ -104,7 +112,7 @@ export async function verifyOtp(
   });
 
   if (!res.ok) {
-    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const data = await readErrorResponse(res);
     throw new Error(data.error || 'OTP verification failed');
   }
 
@@ -127,7 +135,7 @@ export async function adminLogin(payload: {
   });
 
   if (!res.ok) {
-    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const data = await readErrorResponse(res);
     throw new Error(data.error || 'Department login failed');
   }
 
@@ -194,7 +202,7 @@ export async function submitComplaint(payload: {
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to submit complaint');
   }
   return readJsonResponse(res);
@@ -222,7 +230,7 @@ export async function fetchComplaints(params: {
 export async function fetchComplaintById(id: string): Promise<CitizenComplaint> {
   const res = await authFetch(`${API_BASE}/complaints/${encodeURIComponent(id)}`);
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Complaint not found');
   }
   const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
@@ -245,7 +253,7 @@ export async function updateComplaintStatus(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to update status. Officer authentication required.');
   }
   const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
@@ -266,7 +274,7 @@ export async function reassignComplaint(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to reassign department. Authority credentials required.');
   }
   const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
@@ -284,7 +292,7 @@ export async function addInternalNote(
     body: JSON.stringify({ note, author }),
   });
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to save note. Authorized session required.');
   }
   const data = await readJsonResponse<{ notes: string[] }>(res);
@@ -306,7 +314,7 @@ export async function simulateInboundEmailReply(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to simulate officer reply');
   }
   const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
@@ -319,7 +327,7 @@ export async function fetchAnalytics(department_id?: string): Promise<AnalyticsD
     : `${API_BASE}/admin/analytics`;
   const res = await authFetch(url);
   if (!res.ok) {
-    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
+    const err = await readErrorResponse(res);
     throw new Error(err.error || 'Failed to load analytics. Officer credentials required.');
   }
   return readJsonResponse(res);
