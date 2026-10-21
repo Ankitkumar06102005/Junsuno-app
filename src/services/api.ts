@@ -12,6 +12,33 @@ try {
   // Ignore in SSR / restricted environments
 }
 
+async function readJsonResponse<T = any>(response: Response): Promise<T> {
+  if (response.status === 204) return {} as T;
+
+  const text = await response.text();
+  if (!text || !text.trim()) return {} as T;
+
+  const raw = text.trim();
+  const contentType = response.headers.get('content-type') || '';
+  const looksLikeJson = raw.startsWith('{') || raw.startsWith('[') || contentType.includes('application/json');
+
+  if (!looksLikeJson) {
+    const preview = raw.slice(0, 200).replace(/\s+/g, ' ');
+    throw new Error(
+      `Server returned non-JSON data (${response.status}). This usually means the API route is wrong or the backend is not running. Response preview: ${preview}`
+    );
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    const preview = raw.slice(0, 200).replace(/\s+/g, ' ');
+    throw new Error(
+      `Invalid JSON response from server (${response.status}). Check that the backend is running on the same origin. Response preview: ${preview}`
+    );
+  }
+}
+
 export function setAuthToken(token: string | null) {
   currentToken = token;
   try {
@@ -56,11 +83,13 @@ export async function sendOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contact, name, role, department_id }),
   });
-  const data = await res.json();
+
   if (!res.ok) {
+    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(data.error || 'Failed to dispatch verification OTP');
   }
-  return data;
+
+  return readJsonResponse(res);
 }
 
 export async function verifyOtp(
@@ -73,10 +102,13 @@ export async function verifyOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contact, code, name }),
   });
-  const data = await res.json();
+
   if (!res.ok) {
+    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(data.error || 'OTP verification failed');
   }
+
+  const data = await readJsonResponse<AuthResponse>(res);
   if (data.token) {
     setAuthToken(data.token);
   }
@@ -93,10 +125,13 @@ export async function adminLogin(payload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
+
   if (!res.ok) {
+    const data = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(data.error || 'Department login failed');
   }
+
+  const data = await readJsonResponse<AuthResponse>(res);
   if (data.token) {
     setAuthToken(data.token);
   }
@@ -108,7 +143,7 @@ export async function getCurrentUser(): Promise<{ user: CitizenUser | AdminUser 
   if (!res.ok) {
     throw new Error('Not authenticated');
   }
-  return res.json();
+  return readJsonResponse(res);
 }
 
 export async function logoutUser(): Promise<void> {
@@ -123,7 +158,7 @@ export async function logoutUser(): Promise<void> {
 export async function fetchDepartments(): Promise<Department[]> {
   const res = await fetch(`${API_BASE}/departments`);
   if (!res.ok) throw new Error('Failed to load departments');
-  const data = await res.json();
+  const data = await readJsonResponse<{ departments?: Department[] }>(res);
   return data.departments || [];
 }
 
@@ -134,7 +169,7 @@ export async function classifyComplaintAI(text: string, preferred_language: stri
     body: JSON.stringify({ text, preferred_language }),
   });
   if (!res.ok) throw new Error('Classification failed');
-  return res.json();
+  return readJsonResponse(res);
 }
 
 export async function submitComplaint(payload: {
@@ -159,10 +194,10 @@ export async function submitComplaint(payload: {
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to submit complaint');
   }
-  return res.json();
+  return readJsonResponse(res);
 }
 
 export async function fetchComplaints(params: {
@@ -181,16 +216,16 @@ export async function fetchComplaints(params: {
 
   const res = await authFetch(`${API_BASE}/complaints?${searchParams.toString()}`);
   if (!res.ok) throw new Error('Failed to load complaints');
-  return res.json();
+  return readJsonResponse(res);
 }
 
 export async function fetchComplaintById(id: string): Promise<CitizenComplaint> {
   const res = await authFetch(`${API_BASE}/complaints/${encodeURIComponent(id)}`);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Complaint not found');
   }
-  const data = await res.json();
+  const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
   return data.complaint;
 }
 
@@ -210,10 +245,10 @@ export async function updateComplaintStatus(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to update status. Officer authentication required.');
   }
-  const data = await res.json();
+  const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
   return data.complaint;
 }
 
@@ -231,10 +266,10 @@ export async function reassignComplaint(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to reassign department. Authority credentials required.');
   }
-  const data = await res.json();
+  const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
   return data.complaint;
 }
 
@@ -249,10 +284,10 @@ export async function addInternalNote(
     body: JSON.stringify({ note, author }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to save note. Authorized session required.');
   }
-  const data = await res.json();
+  const data = await readJsonResponse<{ notes: string[] }>(res);
   return data.notes;
 }
 
@@ -271,10 +306,10 @@ export async function simulateInboundEmailReply(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to simulate officer reply');
   }
-  const data = await res.json();
+  const data = await readJsonResponse<{ complaint: CitizenComplaint }>(res);
   return data.complaint;
 }
 
@@ -284,8 +319,8 @@ export async function fetchAnalytics(department_id?: string): Promise<AnalyticsD
     : `${API_BASE}/admin/analytics`;
   const res = await authFetch(url);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
+    const err = await readJsonResponse<{ error?: string }>(res).catch(() => ({}));
     throw new Error(err.error || 'Failed to load analytics. Officer credentials required.');
   }
-  return res.json();
+  return readJsonResponse(res);
 }
