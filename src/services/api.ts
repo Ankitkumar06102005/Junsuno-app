@@ -2,6 +2,24 @@ import { CitizenComplaint, Department, AnalyticsData, CitizenUser, AdminUser, Au
 
 export const API_BASE = '/api';
 
+// Parse API responses defensively. A missing Vercel API route often returns an HTML
+// page; calling response.json() directly masks that deployment problem as a SyntaxError.
+async function readApiJson<T>(res: Response, action: string): Promise<T> {
+  const body = await res.text();
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    const preview = body.trim().slice(0, 80).toLowerCase();
+    if (preview.startsWith('<!doctype html') || preview.startsWith('<html') || preview.startsWith('the page')) {
+      throw new Error(
+        `${action} endpoint returned a web page instead of JSON (HTTP ${res.status}). The API may not be deployed or routed correctly. Please try again after the deployment finishes.`
+      );
+    }
+    throw new Error(`Invalid response from ${action} endpoint (HTTP ${res.status}).`);
+  }
+}
+
+
 const TOKEN_KEY = 'junsono_auth_token';
 
 // In-memory + localStorage token cache
@@ -56,7 +74,7 @@ export async function sendOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contact, name, role, department_id }),
   });
-  const data = await res.json();
+  const data = await readApiJson<any>(res, 'Authentication');
   if (!res.ok) {
     throw new Error(data.error || 'Failed to dispatch verification OTP');
   }
@@ -73,7 +91,7 @@ export async function verifyOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contact, code, name }),
   });
-  const data = await res.json();
+  const data = await readApiJson<any>(res, 'Citizen OTP verification');
   if (!res.ok) {
     throw new Error(data.error || 'OTP verification failed');
   }
@@ -93,7 +111,7 @@ export async function adminLogin(payload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
+  const data = await readApiJson<any>(res, 'Department login');
   if (!res.ok) {
     throw new Error(data.error || 'Department login failed');
   }

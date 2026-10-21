@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import path from 'path';
+import { pathToFileURL } from 'node:url';
 import {
   initDatabase,
   getAllComplaints,
@@ -32,7 +33,7 @@ dotenv.config();
 // Initialize persistent file-backed database
 initDatabase();
 
-const app = express();
+export const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Basic HTTP Security Headers
@@ -705,4 +706,6 @@ async function startServer() {
   });
 }
 
-startServer();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  startServer();
+}

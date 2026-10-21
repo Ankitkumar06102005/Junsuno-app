@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { SupportedLanguage } from '../../types';
 import { TRANSLATIONS } from '../../i18n/translations';
+import { CrowdCanvas } from '../ui/CrowdCanvas';
 
 interface LandingPortalProps {
   language: SupportedLanguage;
@@ -131,45 +132,53 @@ export const LandingPortal: React.FC<LandingPortalProps> = ({
 
   return (
     <div className="min-h-[85vh] bg-gradient-to-b from-[#F0FDF4] via-[#FFFFFF] to-[#F0FDF4] dark:from-[#08150E] dark:via-[#0D2116] dark:to-[#08150E] py-8 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto space-y-10">
-        {/* Institutional Hero Banner */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>Official Municipal Civic Redressal Portal</span>
+      {/* Animated welcome hero with the Skiper UI #39 crowd canvas. */}
+      <section className="relative isolate -mx-4 -mt-8 mb-8 overflow-hidden border-b border-emerald-200/70 bg-gradient-to-b from-[#E8F8EE] via-[#F7FCF8] to-[#F0FDF4] px-4 pb-8 pt-8 dark:from-[#07160D] dark:via-[#0D2116] dark:to-[#0D2116] sm:-mx-6 sm:px-6">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[330px] opacity-30 dark:opacity-25">
+          <CrowdCanvas className="absolute inset-0 h-full w-full" />
+        </div>
+        <div className="relative z-10 mx-auto max-w-6xl space-y-8">
+          {/* Institutional Hero Banner */}
+          <div className="mx-auto max-w-3xl space-y-3 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-100/90 px-3 py-1 text-xs font-semibold text-emerald-800 backdrop-blur-sm dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-600" />
+              <span>Official Municipal Civic Redressal Portal</span>
+            </div>
+            <h1 className="font-serif-civic text-3xl font-bold tracking-tight text-emerald-950 sm:text-4xl lg:text-5xl dark:text-emerald-50">
+              Junsono (जनसुनो)
+            </h1>
+            <p className="mx-auto max-w-2xl font-sans-civic text-sm text-emerald-800 sm:text-base dark:text-emerald-200/90">
+              Centralized Grievance Redressal, Multilingual AI Triaging, and Departmental Dispatch for Municipal Corporations.
+            </p>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-serif-civic text-emerald-950 dark:text-emerald-50 tracking-tight">
-            Junsono (जनसुनो)
-          </h1>
-          <p className="text-sm sm:text-base text-emerald-800 dark:text-emerald-200/90 font-sans-civic max-w-2xl mx-auto">
-            Centralized Grievance Redressal, Multilingual AI Triaging, and Departmental Dispatch for Municipal Corporations.
-          </p>
+          {/* Quick Ticket Tracker Bar */}
+          <div className="mx-auto max-w-xl rounded-2xl border-2 border-emerald-200 bg-white/95 p-2 shadow-md backdrop-blur-sm dark:border-emerald-900 dark:bg-[#12281D]/95">
+            <form onSubmit={handleTrackSubmit} className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-emerald-700" />
+                <input
+                  type="text"
+                  value={trackerInput}
+                  onChange={(e) => setTrackerInput(e.target.value)}
+                  placeholder="Track grievance by Ticket # (e.g. JSN-1001)..."
+                  className="w-full rounded-xl border border-emerald-100 bg-emerald-50/50 py-2 pl-9 pr-3 font-mono text-xs text-emerald-950 outline-none focus:border-emerald-500 dark:border-emerald-900/60 dark:bg-[#0A1B12] dark:text-emerald-100"
+                />
+              </div>
+              <button
+                type="submit"
+                className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-emerald-800"
+              >
+                <span>Track</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </form>
+          </div>
         </div>
+        <p className="relative z-10 mt-4 text-center text-[10px] text-emerald-800/70 dark:text-emerald-200/60">Illustrations by <a href="https://www.openpeeps.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2">Open Peeps</a> · Animation adapted from <a href="https://skiper-ui.com/v1/skiper39" target="_blank" rel="noreferrer" className="underline underline-offset-2">Skiper UI #39</a></p>
+      </section>
 
-        {/* Quick Ticket Tracker Bar */}
-        <div className="max-w-xl mx-auto bg-white dark:bg-[#12281D] p-2 rounded-2xl border-2 border-emerald-200 dark:border-emerald-900 shadow-md">
-          <form onSubmit={handleTrackSubmit} className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-emerald-700 absolute left-3 top-3" />
-              <input
-                type="text"
-                value={trackerInput}
-                onChange={(e) => setTrackerInput(e.target.value)}
-                placeholder="Track grievance by Ticket # (e.g. JSN-1001)..."
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-emerald-50/50 dark:bg-[#0A1B12] text-emerald-950 dark:text-emerald-100 font-mono outline-none border border-emerald-100 dark:border-emerald-900/60 focus:border-emerald-500"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
-            >
-              <span>Track</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </form>
-        </div>
-
+      <div className="mx-auto max-w-6xl space-y-10">
         {/* Dual Entry Portals (Citizen & Official Staff) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
           {/* LEFT: Portal Switcher & Informational Column */}

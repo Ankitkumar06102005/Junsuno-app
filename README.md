@@ -20,6 +20,11 @@
 | Quality checks | TypeScript check, Vite production build, GitHub Actions CI |
 | Main use cases | Civic issue reporting, ticket tracking, department queues, status updates, city-level overview |
 
+
+## Landing-page animation
+
+The landing hero includes a lightweight canvas crowd animation adapted from [Skiper UI #39](https://skiper-ui.com/v1/skiper39), using [Open Peeps](https://www.openpeeps.com/) illustrations by Pablo Stanley. The sprite sheet is loaded from Skiper UI's hosted asset at runtime; the page remains usable if that optional asset is unavailable. Attribution is displayed directly below the hero.
+
 ## Problem and solution
 
 Citizens may struggle to identify the right municipal department, describe an issue in a supported language, or follow its progress. Municipal teams also need a consistent way to prioritize incoming reports and recognize reports that may refer to the same incident.
