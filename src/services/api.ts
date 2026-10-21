@@ -91,7 +91,7 @@ export async function verifyOtp(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contact, code, name }),
   });
-  const data = await res.json();
+  const data = await readApiJson<any>(res, 'Citizen OTP verification');
   if (!res.ok) {
     throw new Error(data.error || 'OTP verification failed');
   }
@@ -111,7 +111,7 @@ export async function adminLogin(payload: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
+  const data = await readApiJson<any>(res, 'Department login');
   if (!res.ok) {
     throw new Error(data.error || 'Department login failed');
   }
